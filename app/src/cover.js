@@ -30,16 +30,32 @@ export const GRADES = {
     sky: ['#ffe3ef', '#bfe3ff', '#fff3b0'], sun: '#ff9a5c', accent: '#ff8fb6',
     tint: 'rgba(255, 143, 182, 0.14)', wash: 'rgba(168, 216, 255, 0.10)', ink: '#33203a',
   },
+  'rain-neon': {
+    name: 'Rain Neon', swatch: 'linear-gradient(135deg,#0a0e2a,#232a6e 55%,#b537f2)',
+    sky: ['#0a0e2a', '#232a6e', '#b537f2'], sun: '#7ef0ff', accent: '#00e5ff',
+    tint: 'rgba(30, 60, 200, 0.30)', wash: 'rgba(0, 229, 255, 0.10)', ink: '#05060f',
+    rain: true,
+  },
 };
 
 export const TEMPLATES = {
   'vice-grid': { name: 'Vice Grid', blurb: 'Diagonal collage, big foot title' },
   'neon-split': { name: 'Neon Split', blurb: 'Two tall panels, title band' },
   'sunset-stack': { name: 'Sunset Stack', blurb: 'Full-bleed hero, inset snaps' },
+  'duo': { name: 'Duo', blurb: 'Two portraits, one story' },
+  'key-collage': { name: 'Key Art Collage', blurb: 'Hero right, story left' },
+  'zine-cut': { name: 'Zine Cut', blurb: 'Torn paper, loud type' },
 };
 
 const SLOT_NAMES = { hero: 'Hero', top: 'Top', bottom: 'Lower', strip: 'Strip' };
-export function slotName(slot) { return SLOT_NAMES[slot] ?? slot; }
+const SLOT_LABELS = {
+  duo: { hero: 'Left', top: 'Right', bottom: 'Snap 1', strip: 'Snap 2' },
+  'key-collage': { hero: 'Hero right', top: 'Top left', bottom: 'Mid left', strip: 'Low left' },
+  'zine-cut': { hero: 'Main cut', top: 'Cut 2', bottom: 'Cut 3', strip: 'Cut 4' },
+};
+export function slotName(slot, template) {
+  return (SLOT_LABELS[template] && SLOT_LABELS[template][slot]) || SLOT_NAMES[slot] || slot;
+}
 
 export function defaultState() {
   return {
@@ -51,6 +67,8 @@ export function defaultState() {
     tagline: 'One last job under the neon sun.',
     titlePos: 'bottom',
     titleColor: '#ffffff',
+    titleStretch: 'normal',
+    titleSize: 1,
     art: { sun: true, skyline: true, palms: true, grain: true },
     panels: [
       { slot: 'hero', photo: 'pier', zoom: 1, dx: 0, dy: 0 },
@@ -75,6 +93,25 @@ function polygonsFor(template) {
   if (template === 'sunset-stack') {
     return { hero: [[0, 0], [1, 0], [1, 1], [0, 1]], top: 'inset1', bottom: 'inset2', strip: null };
   }
+  if (template === 'duo') {
+    return {
+      hero: [[0, 0], [0.52, 0.02], [0.50, 1], [0, 1]],
+      top: [[0.48, 0.02], [1, 0], [1, 1], [0.50, 1]],
+      bottom: 'snap1',
+      strip: 'snap2',
+    };
+  }
+  if (template === 'key-collage') {
+    return {
+      hero: [[0.45, 0], [1, 0], [1, 1], [0.45, 1]],
+      top: [[0, 0], [0.45, 0], [0.45, 0.26], [0, 0.26]],
+      bottom: [[0, 0.26], [0.45, 0.26], [0.45, 0.50], [0, 0.50]],
+      strip: [[0, 0.50], [0.45, 0.50], [0.45, 0.72], [0, 0.72]],
+    };
+  }
+  if (template === 'zine-cut') {
+    return { hero: 'torn1', top: 'torn2', bottom: 'torn3', strip: 'torn4' };
+  }
   return {
     hero: [[0, 0], [0.60, 0], [0.65, 0.84], [0, 0.84]],
     top: [[0.60, 0], [1, 0], [1, 0.42], [0.625, 0.42]],
@@ -88,6 +125,8 @@ function insetPoly(kind, W, H) {
   const defs = {
     inset1: { x: 0.055, y: 0.30, s: 0.20, rot: -6 },
     inset2: { x: 0.75, y: 0.65, s: 0.20, rot: 5 },
+    snap1: { x: 0.06, y: 0.70, s: 0.17, rot: -5 },
+    snap2: { x: 0.77, y: 0.70, s: 0.17, rot: 4 },
   };
   const d = defs[kind];
   const s = d.s * W;
@@ -101,12 +140,57 @@ function insetPoly(kind, W, H) {
   ]);
 }
 
+const TORN_DEFS = {
+  torn1: { x: 0.03, y: 0.03, w: 0.44, h: 0.58, rot: -3, seed: 11 },
+  torn2: { x: 0.50, y: 0.04, w: 0.24, h: 0.40, rot: 5, seed: 23 },
+  torn3: { x: 0.76, y: 0.04, w: 0.21, h: 0.40, rot: -6, seed: 37 },
+  torn4: { x: 0.50, y: 0.48, w: 0.47, h: 0.20, rot: 2, seed: 51 },
+};
+
+function tornPoly(d, W, H) {
+  const rnd = mulberry32(d.seed);
+  const cx = (d.x + d.w / 2) * W;
+  const cy = (d.y + d.h / 2) * H;
+  const a = (d.rot * Math.PI) / 180;
+  const edges = [
+    [[d.x, d.y], [d.x + d.w, d.y]],
+    [[d.x + d.w, d.y], [d.x + d.w, d.y + d.h]],
+    [[d.x + d.w, d.y + d.h], [d.x, d.y + d.h]],
+    [[d.x, d.y + d.h], [d.x, d.y]],
+  ];
+  const pts = [];
+  for (const [[x0, y0], [x1, y1]] of edges) {
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const t = i / n;
+      const px = x0 + (x1 - x0) * t;
+      const py = y0 + (y1 - y0) * t;
+      const ex = x1 - x0;
+      const ey = y1 - y0;
+      const len = Math.hypot(ex, ey) || 1;
+      const j = (rnd() - 0.5) * 0.024;
+      pts.push([px + (-ey / len) * j, py + (ex / len) * j]);
+    }
+  }
+  return pts.map(([px, py]) => {
+    const rx = px * W - cx;
+    const ry = py * H - cy;
+    return [
+      (cx + rx * Math.cos(a) - ry * Math.sin(a)) / W,
+      (cy + rx * Math.sin(a) + ry * Math.cos(a)) / H,
+    ];
+  });
+}
+
 export function panelPolygons(template, W, H) {
   const raw = polygonsFor(template);
   const out = {};
   for (const [slot, poly] of Object.entries(raw)) {
     if (!poly) { out[slot] = null; continue; }
-    if (typeof poly === 'string') { out[slot] = insetPoly(poly, W, H); continue; }
+    if (typeof poly === 'string') {
+      if (poly.startsWith('torn')) { out[slot] = tornPoly(TORN_DEFS[poly], W, H); continue; }
+      out[slot] = insetPoly(poly, W, H); continue;
+    }
     out[slot] = poly;
   }
   return out;
@@ -272,6 +356,25 @@ function fitSize(ctx, text, maxW, start, min, weight, family) {
 
 const TITLE_FONT = '"Arial Black", "Helvetica Neue", Arial, sans-serif';
 const BODY_FONT = '"Helvetica Neue", Arial, sans-serif';
+const STRETCH = { normal: 1, wide: 1.32, condensed: 0.78 };
+
+function paintTitleText(ctx, text, ax, baselineY, size, stretch, color) {
+  ctx.save();
+  ctx.translate(ax, 0);
+  ctx.scale(stretch, 1);
+  ctx.translate(-ax, 0);
+  ctx.font = `900 ${size}px ${TITLE_FONT}`;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = Math.max(3, size * 0.09);
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = size * 0.18;
+  ctx.shadowOffsetY = size * 0.05;
+  ctx.strokeText(text, ax, baselineY);
+  ctx.fillStyle = color;
+  ctx.fillText(text, ax, baselineY);
+  ctx.restore();
+}
 
 function scrim(ctx, x, y, w, h) {
   const g = ctx.createLinearGradient(0, y, 0, y + h);
@@ -285,9 +388,11 @@ function drawTitleBlock(ctx, S, grade, x, y, maxW, align, W, H) {
   const title = (S.title || '').trim().toUpperCase();
   const sub = (S.subtitle || '').trim().toUpperCase();
   const tag = (S.tagline || '').trim();
+  const stretch = STRETCH[S.titleStretch] || 1;
+  const sizeMul = S.titleSize || 1;
   // Measure first, then shrink the whole block if it would run past the edge.
   let ss = sub ? fitSize(ctx, sub, maxW, Math.round(H * 0.028), 12, '700', BODY_FONT) : 0;
-  let ts = title ? fitSize(ctx, title, maxW, Math.round(H * 0.105), 20, '900', TITLE_FONT) : 0;
+  let ts = title ? fitSize(ctx, title, maxW / stretch, Math.round(H * 0.105 * sizeMul), 20, '900', TITLE_FONT) : 0;
   let gs = tag ? fitSize(ctx, tag, maxW, Math.round(H * 0.024), 11, '400', BODY_FONT) : 0;
   const total = (sub ? ss * 1.5 : 0) + (title ? ts * 1.28 : 0) + (tag ? gs * 1.6 : 0);
   const avail = H * 0.985 - y;
@@ -306,17 +411,7 @@ function drawTitleBlock(ctx, S, grade, x, y, maxW, align, W, H) {
     cy += ss * 1.5;
   }
   if (title) {
-    ctx.font = `900 ${ts}px ${TITLE_FONT}`;
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-    ctx.lineWidth = Math.max(3, ts * 0.09);
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = ts * 0.18;
-    ctx.shadowOffsetY = ts * 0.05;
-    ctx.strokeText(title, ax, cy + ts * 0.92);
-    ctx.fillStyle = S.titleColor || '#ffffff';
-    ctx.fillText(title, ax, cy + ts * 0.92);
-    ctx.shadowColor = 'transparent';
+    paintTitleText(ctx, title, ax, cy + ts * 0.92, ts, stretch, S.titleColor || '#ffffff');
     cy += ts * 1.28;
   }
   if (tag) {
@@ -420,15 +515,10 @@ function drawNeonSplit(ctx, S, grade, polys, photos, W, H) {
     ctx.fillText(sub, W / 2, cy - H * 0.055);
   }
   if (title) {
-    const ts = fitSize(ctx, title, 0.86 * W, Math.round(H * 0.085), 20, '900', TITLE_FONT);
-    ctx.font = `900 ${ts}px ${TITLE_FONT}`;
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-    ctx.lineWidth = Math.max(3, ts * 0.09);
-    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = ts * 0.16; ctx.shadowOffsetY = ts * 0.04;
-    ctx.strokeText(title, W / 2, cy + ts * 0.32);
-    ctx.fillStyle = S.titleColor || '#ffffff';
-    ctx.fillText(title, W / 2, cy + ts * 0.32);
+    const stretch = STRETCH[S.titleStretch] || 1;
+    const sizeMul = S.titleSize || 1;
+    const ts = fitSize(ctx, title, 0.86 * W / stretch, Math.round(H * 0.085 * sizeMul), 20, '900', TITLE_FONT);
+    paintTitleText(ctx, title, W / 2, cy + ts * 0.32, ts, stretch, S.titleColor || '#ffffff');
   }
   ctx.restore();
   if (S.tagline) {
@@ -492,6 +582,141 @@ function drawSunsetStack(ctx, S, grade, polys, photos, W, H) {
   }
 }
 
+function drawDuo(ctx, S, grade, polys, photos, W, H) {
+  for (const slot of ['hero', 'top']) {
+    const p = S.panels.find((q) => q.slot === slot);
+    const poly = polys[slot];
+    if (p && poly) { drawPhoto(ctx, poly, photos.get(p.photo), p, W, H); tintPanel(ctx, poly, W, H, grade); }
+  }
+  strokeDivider(ctx, polys.hero, W, H, '#ffffff', Math.max(4, W * 0.007));
+  strokeDivider(ctx, polys.top, W, H, '#ffffff', Math.max(4, W * 0.007));
+  const bandY = 0.42;
+  const bandH = 0.20;
+  const cx = W / 2;
+  const cy = (bandY + bandH / 2) * H;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((-2.5 * Math.PI) / 180);
+  ctx.translate(-cx, -cy);
+  const band = ctx.createLinearGradient(0, bandY * H, W, bandY * H);
+  band.addColorStop(0, grade.sky[0]);
+  band.addColorStop(0.5, grade.sky[1]);
+  band.addColorStop(1, grade.sky[2]);
+  ctx.fillStyle = band;
+  ctx.fillRect(-W * 0.05, bandY * H, W * 1.1, bandH * H);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-W * 0.05, bandY * H, W * 1.1, Math.max(3, W * 0.004));
+  ctx.fillRect(-W * 0.05, (bandY + bandH) * H - Math.max(3, W * 0.004), W * 1.1, Math.max(3, W * 0.004));
+  ctx.restore();
+  if (S.art.palms) {
+    drawPalm(ctx, 0.045 * W, (bandY + bandH) * H, H * 0.09, 'rgba(8,3,16,0.85)', -0.2);
+    drawPalm(ctx, 0.955 * W, (bandY + bandH) * H, H * 0.09, 'rgba(8,3,16,0.85)', 0.2);
+  }
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((-2.5 * Math.PI) / 180);
+  ctx.translate(-cx, -cy);
+  drawTitleBlock(ctx, { ...S, tagline: '' }, grade, 0.10 * W, bandY * H + 0.045 * H, 0.80 * W, 'center', W, H);
+  ctx.restore();
+  if (S.tagline) {
+    ctx.save();
+    const gs = fitSize(ctx, S.tagline, 0.8 * W, Math.round(H * 0.024), 11, '400', BODY_FONT);
+    const stripH = gs * 2.4;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0, (bandY + bandH) * H, W, stripH);
+    ctx.textAlign = 'center';
+    ctx.font = `italic 400 ${gs}px ${BODY_FONT}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillText(S.tagline, W / 2, (bandY + bandH) * H + gs * 1.6);
+    ctx.restore();
+  }
+  for (const slot of ['bottom', 'strip']) {
+    const p = S.panels.find((q) => q.slot === slot);
+    const poly = polys[slot];
+    if (!p || !poly) continue;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = W * 0.02; ctx.shadowOffsetY = W * 0.006;
+    drawPhoto(ctx, poly, photos.get(p.photo), p, W, H);
+    ctx.restore();
+    strokeDivider(ctx, poly, W, H, '#ffffff', Math.max(4, W * 0.008));
+  }
+}
+
+function drawKeyCollage(ctx, S, grade, polys, photos, W, H) {
+  for (const p of S.panels) {
+    const poly = polys[p.slot];
+    if (!poly) continue;
+    drawPhoto(ctx, poly, photos.get(p.photo), p, W, H);
+    tintPanel(ctx, poly, W, H, grade);
+  }
+  for (const p of S.panels) {
+    const poly = polys[p.slot];
+    if (poly) strokeDivider(ctx, poly, W, H, '#ffffff', Math.max(4, W * 0.007));
+  }
+  if (S.art.sun) drawSun(ctx, 0.45 * W, 0.005 * H, Math.min(W, H) * 0.055, grade.sun);
+  ctx.save();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = Math.max(4, W * 0.01);
+  ctx.strokeRect(0, 0, W, H);
+  ctx.restore();
+  scrim(ctx, 0, H * 0.70, 0.45 * W, H * 0.30);
+  drawTitleBlock(ctx, S, grade, 0.04 * W, H * 0.79, 0.38 * W, 'left', W, H);
+}
+
+function drawZineCut(ctx, S, grade, polys, photos, W, H) {
+  for (const p of S.panels) {
+    const poly = polys[p.slot];
+    if (!poly) continue;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = W * 0.018; ctx.shadowOffsetY = W * 0.005;
+    drawPhoto(ctx, poly, photos.get(p.photo), p, W, H);
+    ctx.restore();
+    tintPanel(ctx, poly, W, H, grade);
+    strokeDivider(ctx, poly, W, H, '#ffffff', Math.max(5, W * 0.011));
+  }
+  if (S.art.palms) drawPalm(ctx, 0.93 * W, 0.98 * H, H * 0.07, 'rgba(8,3,16,0.9)', 0.25);
+  scrim(ctx, 0, H * 0.72, W, H * 0.28);
+  drawTitleBlock(ctx, S, grade, 0.05 * W, H * 0.76, 0.90 * W, 'left', W, H);
+}
+
+function drawRain(ctx, W, H, seed) {
+  const rnd = mulberry32(seed);
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 140; i++) {
+    const x = rnd() * W;
+    const y = rnd() * H;
+    const len = H * (0.02 + rnd() * 0.035);
+    ctx.strokeStyle = `rgba(190, 225, 255, ${0.10 + rnd() * 0.22})`;
+    ctx.lineWidth = Math.max(1, W * 0.0012);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - len * 0.12, y + len);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawWetSheen(ctx, W, H, grade) {
+  const bandH = H * 0.16;
+  const g = ctx.createLinearGradient(0, H - bandH, 0, H);
+  g.addColorStop(0, grade.accent + '00');
+  g.addColorStop(1, grade.accent + '30');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, H - bandH, W, bandH);
+  const rnd = mulberry32(99);
+  for (let i = 0; i < 26; i++) {
+    const x = rnd() * W;
+    const w = W * (0.01 + rnd() * 0.05);
+    const h = bandH * (0.25 + rnd() * 0.6);
+    const gg = ctx.createLinearGradient(0, H - h, 0, H);
+    gg.addColorStop(0, 'rgba(255,255,255,0)');
+    gg.addColorStop(1, `rgba(255,255,255,${0.10 + rnd() * 0.12})`);
+    ctx.fillStyle = gg;
+    ctx.fillRect(x, H - h, w, h);
+  }
+}
+
 /** Draws the full cover for state S onto canvas (at the canvas's own size). */
 export function drawCover(canvas, S, photos) {
   const ctx = canvas.getContext('2d');
@@ -504,13 +729,17 @@ export function drawCover(canvas, S, photos) {
   const polys = panelPolygons(S.template, W, H);
   if (S.template === 'neon-split') drawNeonSplit(ctx, S, grade, polys, photos, W, H);
   else if (S.template === 'sunset-stack') drawSunsetStack(ctx, S, grade, polys, photos, W, H);
+  else if (S.template === 'duo') drawDuo(ctx, S, grade, polys, photos, W, H);
+  else if (S.template === 'key-collage') drawKeyCollage(ctx, S, grade, polys, photos, W, H);
+  else if (S.template === 'zine-cut') drawZineCut(ctx, S, grade, polys, photos, W, H);
   else drawViceGrid(ctx, S, grade, polys, photos, W, H);
   const wash = ctx.createLinearGradient(0, 0, 0, H);
   wash.addColorStop(0, 'rgba(255,255,255,0)');
   wash.addColorStop(1, grade.wash);
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, W, H);
-  if (S.art && S.art.grain) drawGrain(ctx, W, H, 0.16);
+  if (grade.rain) { drawWetSheen(ctx, W, H, grade); drawRain(ctx, W, H, 7); }
+  if (S.art && S.art.grain) drawGrain(ctx, W, H, S.template === 'zine-cut' ? 0.30 : 0.16);
   drawVignette(ctx, W, H);
 }
 

@@ -49,6 +49,7 @@ function syncControls() {
   document.querySelectorAll('#panelList .panel-row').forEach((row, i) => {
     const pick = row.querySelector('.pick');
     pick.setAttribute('aria-pressed', String(i === state.selected));
+    pick.textContent = slotName(state.panels[i].slot, state.template);
     const sel = row.querySelector('select');
     if (sel.value !== state.panels[i].photo) sel.value = state.panels[i].photo;
   });
@@ -85,7 +86,7 @@ function buildControls() {
     const row = document.createElement('div');
     row.className = 'panel-row';
     const pick = document.createElement('button');
-    pick.type = 'button'; pick.className = 'pick'; pick.textContent = slotName(p.slot);
+    pick.type = 'button'; pick.className = 'pick'; pick.textContent = slotName(p.slot, state.template);
     pick.addEventListener('click', () => { state.selected = i; redraw(); });
     const sel = document.createElement('select');
     sel.setAttribute('aria-label', `Photo for ${slotName(p.slot)} panel`);
@@ -116,7 +117,20 @@ function bindInputs() {
   const tagline = document.getElementById('tagline');
   title.addEventListener('input', () => { state.title = title.value; redraw(); });
   subtitle.addEventListener('input', () => { state.subtitle = subtitle.value; redraw(); });
-  tagline.addEventListener('input', () => { state.tagline = tagline.value; redraw(); });
+  tagline.addEventListener('input', () => {
+    state.tagline = tagline.value;
+    document.getElementById('tagPreset').value = '';
+    redraw();
+  });
+  document.getElementById('tagPreset').addEventListener('change', (e) => {
+    if (e.target.value) {
+      state.tagline = e.target.value;
+      document.getElementById('tagline').value = e.target.value;
+      redraw();
+    }
+  });
+  document.getElementById('titleStretch').addEventListener('change', (e) => { state.titleStretch = e.target.value; redraw(); });
+  document.getElementById('titleSize').addEventListener('input', (e) => { state.titleSize = Number(e.target.value); redraw(); });
   document.getElementById('titlePos').addEventListener('change', (e) => { state.titlePos = e.target.value; redraw(); });
   document.getElementById('titleColor').addEventListener('change', (e) => { state.titleColor = e.target.value; redraw(); });
   document.getElementById('zoom').addEventListener('input', (e) => {
@@ -159,6 +173,8 @@ function bindInputs() {
     state.grade = grades[Math.floor(Math.random() * grades.length)];
     state.titleColor = colors[Math.floor(Math.random() * colors.length)];
     state.titlePos = ['bottom', 'top', 'center'][Math.floor(Math.random() * 3)];
+    state.titleStretch = ['normal', 'wide', 'condensed'][Math.floor(Math.random() * 3)];
+    state.titleSize = 0.85 + Math.random() * 0.4;
     state.panels.forEach((p) => {
       p.photo = keys[Math.floor(Math.random() * keys.length)];
       p.zoom = 1 + Math.random() * 0.4;
@@ -167,6 +183,8 @@ function bindInputs() {
     });
     document.getElementById('titlePos').value = state.titlePos;
     document.getElementById('titleColor').value = state.titleColor;
+    document.getElementById('titleStretch').value = state.titleStretch;
+    document.getElementById('titleSize').value = String(state.titleSize);
     redraw();
     status.textContent = 'Shuffled template, grade and photos.';
   });
