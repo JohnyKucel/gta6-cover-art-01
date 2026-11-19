@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunset Vice Cover Studio</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">SV</span> Sunset Vice <span class="brand-sub">Cover Studio</span></div>
+  <div class="topbar-note">Offline &middot; your photos never leave this machine</div>
+</header>
+<main class="app">
+  <section class="controls" aria-label="Cover controls">
+    <div class="group">
+      <h2>Template</h2>
+      <div class="cards" id="templates"></div>
+    </div>
+    <div class="group">
+      <h2>Colour grade</h2>
+      <div class="swatches" id="grades"></div>
+    </div>
+    <div class="group">
+      <h2>Caption</h2>
+      <label>Title <input id="title" type="text" maxlength="28" value="SUNSET HEIST"></label>
+      <label>Subtitle <input id="subtitle" type="text" maxlength="40" value="TALES FROM SOL BAY"></label>
+      <label>Tagline <input id="tagline" type="text" maxlength="60" value="One last job under the neon sun."></label>
+      <div class="row">
+        <label>Title spot
+          <select id="titlePos">
+            <option value="bottom" selected>Bottom</option>
+            <option value="top">Top</option>
+            <option value="center">Centre</option>
+          </select>
+        </label>
+        <label>Title colour
+          <select id="titleColor">
+            <option value="#ffffff" selected>White</option>
+            <option value="#ffd23f">Gold</option>
+            <option value="#ff7eb6">Pink</option>
+            <option value="#7ef0ff">Cyan</option>
+            <option value="#1d1026">Ink</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="group">
+      <h2>Photos <span class="hint">click a panel on the cover to pick it</span></h2>
+      <div class="panel-list" id="panelList"></div>
+      <div class="row">
+        <button id="samplePier" type="button" class="ghost">Sample: Pier</button>
+        <button id="sampleBlvd" type="button" class="ghost">Sample: Boulevard</button>
+      </div>
+      <label class="upload">Add your photos
+        <input id="upload" type="file" accept="image/*" multiple>
+      </label>
+      <label>Zoom <input id="zoom" type="range" min="1" max="2.5" step="0.05" value="1"></label>
+      <p class="hint">Drag the cover to move the selected photo. Scroll over it to zoom.</p>
+    </div>
+    <div class="group">
+      <h2>Poster art</h2>
+      <div class="checks">
+        <label><input id="artSun" type="checkbox" checked> Sun</label>
+        <label><input id="artSkyline" type="checkbox" checked> Skyline</label>
+        <label><input id="artPalms" type="checkbox" checked> Palms</label>
+        <label><input id="artGrain" type="checkbox" checked> Film grain</label>
+      </div>
+    </div>
+    <div class="group">
+      <h2>Export</h2>
+      <div class="sizes" id="sizes"></div>
+      <div class="row">
+        <button id="surprise" type="button" class="ghost">Surprise me</button>
+        <button id="export" type="button" class="primary">Export PNG</button>
+      </div>
+      <p id="status" role="status"></p>
+    </div>
+  </section>
+  <section class="stage">
+    <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
+    <p class="stage-note">Live preview &mdash; what you see is the PNG you get.</p>
+  </section>
+</main>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
