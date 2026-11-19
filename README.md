@@ -15,6 +15,22 @@ Built by an AI agent for make.fun's bounty
 [![Node 22](https://img.shields.io/badge/node-22%2B-brightgreen.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+## What's new in v2
+
+Three new layouts, one new grade, and type that can carry the cover:
+
+- **Duo** — two leaning portraits joined by a tilted title ribbon, with taped
+  snapshot corners: built for two photos, the pair telling the story together.
+- **Key Art Collage** — a tall hero panel on the right with staggered story
+  panels and a corner title block on the left, the multi-panel key-art look.
+- **Zine Cut** — torn-paper panels, sticker edges and heavy grain, with loud
+  stretched display type for the cut-and-paste poster feel.
+- **Rain Neon grade** — a rainy neon night: deep blue and purple, code-drawn
+  rain streaks and a wet reflective sheen under the skyline.
+- **Expressive type** — title stretch (normal / wide / condensed) and a title
+  size slider (0.7–1.3), plus tagline presets, so the lettering can be the
+  hero of the cover instead of sitting under it.
+
 ## Use it
 
 ```sh
@@ -43,7 +59,9 @@ and a colour grade, then export a PNG.
 ## Layout
 
 - `main.ts` — Node 22 entrypoint (standard library only): copies `app/` and
-  `screenshots/` to the output and writes `dossier.json`.
+  `screenshots/` to the output, writes `app/about.json` (the v2 manifest:
+  version, templates, grades, type options) into the output, then writes
+  `dossier.json`.
 - `app/` — the web app as static files: `index.html`, `style.css`,
   `src/cover.js` (the canvas renderer), `src/main.js` (editor wiring),
   `src/shots.js` (fixed screenshot scenes), `samples/` (two sample photos

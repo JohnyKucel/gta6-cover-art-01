@@ -24,6 +24,17 @@ cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
 mkdirSync(join(out, 'screenshots'), { recursive: true });
 if (existsSync(join(here, 'screenshots'))) cpSync(join(here, 'screenshots'), join(out, 'screenshots'), { recursive: true });
 
+const coverManifest = {
+  version: '2',
+  name: 'Sunset Vice Cover Studio',
+  templates: ['Vice Grid', 'Neon Split', 'Sunset Stack', 'Duo', 'Key Art Collage', 'Zine Cut'],
+  grades: ['Vice Sunset', 'Neon Night', 'Palm Noir', 'Pastel Dawn', 'Rain Neon'],
+  type: { titleStretch: ['normal', 'wide', 'condensed'], titleSize: { min: 0.7, max: 1.3, step: 0.05, default: 1 }, taglinePresets: true },
+  exportSizes: ['1080x1080', '1080x1350', '1920x1080'],
+};
+
+writeFileSync(join(out, 'app', 'about.json'), `${JSON.stringify(coverManifest, null, 2)}\n`);
+
 // The scorer's own caps (reference/gate.json): only text_max_bytes shapes the bytes; the others refuse an entry the
 // scorer would refuse (more than 4 screenshots or one over 256 KiB; more than 993 files in app/ or 48 MiB of app
 // files, in all, or a path under app/ over 1000 bytes: app/ counts beside /output's own 1000-entry cap, its
